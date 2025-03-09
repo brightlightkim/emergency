@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Header from './components/Header';
-import EmergencyForm from './components/EmergencyForm';
-import ResponseDisplay from './components/ResponseDisplay';
-import LocationDisplay from './components/LocationDisplay';
+import Header from './components/Header.jsx';
+import EmergencyForm from './components/EmergencyForm.jsx';
+import ResponseDisplay from './components/ResponseDisplay.jsx';
+import LocationDisplay from './components/LocationDisplay.jsx';
 
 function App() {
   const [loading, setLoading] = useState(false);

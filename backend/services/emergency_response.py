@@ -1,8 +1,12 @@
-from openai import OpenAI
+from dotenv import load_dotenv
 import os
+from cerebras.cloud.sdk import Cerebras
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "sk-your-api-key"))
+load_dotenv()
+
+# Initialize Cerebras client
+api_key = os.environ.get("CEREBRAS_API_KEY")
+client = Cerebras(api_key=api_key)
 
 def generate_first_aid(transcription, injury_info):
     """
@@ -33,20 +37,20 @@ def generate_first_aid(transcription, injury_info):
     """
     
     try:
-        # Call the OpenAI API
+        # Call the Cerebras API
         response = client.chat.completions.create(
-            model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are an emergency medical response assistant. Provide concise, accurate first aid instructions based on the emergency description."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,  # Lower temperature for more focused responses
-            max_tokens=500    # Limit response length
+            model="llama3.1-8b",  # Using the Llama 3.1 8B model
+            temperature=0.3,      # Lower temperature for more focused responses
+            max_tokens=500        # Limit response length
         )
         
         # Extract the response text
         return response.choices[0].message.content
     except Exception as e:
         # Fallback response in case of API error
-        print(f"Error calling OpenAI API: {str(e)}")
+        print(f"Error calling Cerebras API: {str(e)}")
         return "Unable to generate first aid instructions. Please call emergency services immediately at 911."

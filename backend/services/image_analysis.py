@@ -1,20 +1,24 @@
-from ultralytics import YOLO
-import torch
-import cv2
-import numpy as np
+import os
+import base64
+from openai import OpenAI
+from dotenv import load_dotenv
 
-# Global model instance
-model = None
+load_dotenv()
+
+# Global client instance
+client = None
 
 def load_model():
-    global model
-    if model is None:
-        model = YOLO("yolov8n.pt")  # Load pretrained model
-    return model
+    """Initialize the OpenAI client"""
+    global client
+    if client is None:
+        # Initialize OpenAI client with API key from environment variable
+        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    return client
 
 def analyze_image(image_path):
     """
-    Analyze image to detect injuries or emergency situations
+    Analyze image to detect injuries or emergency situations using OpenAI Vision
     
     Args:
         image_path: Path to the image file
@@ -22,32 +26,63 @@ def analyze_image(image_path):
     Returns:
         Dict with detected objects and confidence scores
     """
-    # Load the model
-    detection_model = load_model()
+    # Load the OpenAI client
+    client = load_model()
     
-    # Perform inference
-    results = detection_model(image_path)
+    # Read and encode the image
+    with open(image_path, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
     
-    # Process results
-    detections = []
-    for result in results:
-        for box in result.boxes:
-            obj_class = result.names[int(box.cls[0])]
-            confidence = float(box.conf[0])
-            # Only return high-confidence detections
-            if confidence > 0.5:
-                detections.append({
-                    "class": obj_class,
-                    "confidence": confidence
-                })
-    
-    # Additional logic for injury detection based on objects
-    # This is a simplified example - you would expand this for real injury detection
-    emergency_keywords = ['person', 'car', 'truck', 'fire', 'blood']
-    emergency_objects = [item for item in detections if item['class'] in emergency_keywords]
-    
-    return {
-        "all_detections": detections,
-        "emergency_detections": emergency_objects,
-        "has_emergency": len(emergency_objects) > 0
-    }
+    try:
+        # Call the OpenAI Vision API
+        response = client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Analyze this image for emergency situations or injuries. Identify any people, vehicles, fire, blood, injuries, accidents, or other emergency-related objects. Provide a list of detected objects with confidence levels (high, medium, low) and determine if this is an emergency situation."},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300
+        )
+        
+        # Process the response text to extract structured information
+        analysis_text = response.choices[0].message.content
+        
+        # Parse the response (simplified version, can be enhanced with better parsing)
+        detections = []
+        emergency_keywords = ['person', 'car', 'truck', 'fire', 'blood', 'injury', 'accident', 'emergency']
+        emergency_objects = []
+        has_emergency = any(keyword in analysis_text.lower() for keyword in emergency_keywords)
+        
+        # Extract objects mentioned in the response
+        # This is a simple implementation - in a real app, you'd want more robust parsing
+        for keyword in emergency_keywords:
+            if keyword in analysis_text.lower():
+                confidence = "high" if keyword in analysis_text.lower().split()[:20] else "medium"
+                item = {"class": keyword, "confidence": confidence}
+                detections.append(item)
+                emergency_objects.append(item)
+        
+        return {
+            "all_detections": detections,
+            "emergency_detections": emergency_objects,
+            "has_emergency": has_emergency,
+            "analysis": analysis_text
+        }
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "all_detections": [],
+            "emergency_detections": [],
+            "has_emergency": False
+        }

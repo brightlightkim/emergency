@@ -11,5 +11,11 @@ export default defineConfig({
       '/analyze-image': 'http://localhost:8000',
       '/first-aid': 'http://localhost:8000'
     }
+  },
+  // Add esbuild configuration to handle JSX in .js files
+  esbuild: {
+    loader: {
+      '.js': 'jsx',
+    },
   }
 });
