@@ -3,6 +3,7 @@ import Header from './components/Header.jsx';
 import EmergencyForm from './components/EmergencyForm.jsx';
 import ResponseDisplay from './components/ResponseDisplay.jsx';
 import LocationDisplay from './components/LocationDisplay.jsx';
+import EmergencyCall from './components/EmergencyCall.jsx';
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -10,6 +11,8 @@ function App() {
   const [firstAidResponse, setFirstAidResponse] = useState(null);
   const [location, setLocation] = useState(null);
   const [step, setStep] = useState(1);
+  const [callCompleted, setCallCompleted] = useState(false);
+  const [callTranscript, setCallTranscript] = useState(null);
 
   const handleEmergencyResponse = (data) => {
     setEmergencyData(data);
@@ -25,9 +28,17 @@ function App() {
     setLocation(locationData);
   };
 
+  const handleCallCompleted = (callData) => {
+    setCallCompleted(true);
+    setCallTranscript(callData.transcript);
+    setStep(4); // Move to the directions step
+  };
+
   const resetApplication = () => {
     setEmergencyData(null);
     setFirstAidResponse(null);
+    setCallCompleted(false);
+    setCallTranscript(null);
     setStep(1);
   };
 
@@ -71,6 +82,56 @@ function App() {
             </div>
             
             {location && <LocationDisplay location={location} />}
+            
+            <EmergencyCall 
+              onCallCompleted={handleCallCompleted}
+              setLoading={setLoading}
+            />
+            
+            <div className="flex justify-center">
+              <button 
+                onClick={resetApplication}
+                className="bg-emergency-blue text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+              >
+                Start New Emergency Report
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && callCompleted && (
+          <div className="space-y-8">
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-bold mb-4">Emergency Call Completed</h2>
+              <div className="space-y-4">
+                <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-green-700">
+                        Your emergency call has been processed. Emergency services have been notified.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {callTranscript && (
+                  <div>
+                    <h3 className="font-medium mb-2">Call Transcript:</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-700 whitespace-pre-line text-sm">{callTranscript}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Show directions to the safe location */}
+            <LocationDisplay location={location} showDirections={true} />
             
             <div className="flex justify-center">
               <button 

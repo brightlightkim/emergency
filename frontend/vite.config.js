@@ -6,16 +6,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    proxy: {
-      '/transcribe-audio': 'http://localhost:8000',
-      '/analyze-image': 'http://localhost:8000',
-      '/first-aid': 'http://localhost:8000'
+    open: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+  resolve: {
+    alias: {
+      '@': '/src'
     }
   },
-  // Add esbuild configuration to handle JSX in .js files
-  esbuild: {
-    loader: {
-      '.js': 'jsx',
-    },
-  }
 });
