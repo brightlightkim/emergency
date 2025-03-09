@@ -84,6 +84,7 @@ def initiate_emergency_call():
         retell_number = os.getenv("AGENT_PHONE_NUMBER")
         user_number = os.getenv("DANIEL_PHONE_NUMBER")
         
+        
         if not retell_number or not user_number:
             return {"error": "Phone numbers not configured in environment variables"}
             
